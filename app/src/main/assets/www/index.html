@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VIE PRIVÉ — NPS</title>
+<style>
+
+/* ══════════════════════════════
+   RESET
+══════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ══════════════════════════════
+   THÈMES
+══════════════════════════════ */
+:root {
+  --bg: #0a0d1a; --card: #141829; --border: #1e2d4a;
+  --text: #fff;  --muted: #8892b0; --primary: #00d4ff; --red: #ff4757;
+}
+body.t1 { --bg:#0d0a1a; --card:#1a1229; --border:#2e1e4a; --primary:#a78bfa; }
+body.t2 { --bg:#1a0a10; --card:#29121c; --border:#4a1e2d; --primary:#f472b6; }
+body.t3 { --bg:#0a1a0e; --card:#122918; --border:#1e4a28; --primary:#34d399; }
+/* Thème clair */
+body.t4 {
+  --bg:#f0f3fb; --card:#ffffff; --border:#d0d9ee;
+  --text:#18243f; --muted:#6b7a9a; --primary:#0066cc; --red:#e53935;
+}
+body.t4 .lock-ring { background: rgba(0,102,204,.08); }
+body.t4 .by        { color:#aab5cc; }
+body.t4 .ainfo     { color:#aab5cc; }
+body.t4 .bnav      { background:rgba(240,243,251,.97); }
+body.t4 .modal     { background:#ffffff; }
+body.t4 .sheet     { background:#ffffff; }
+/* Thème bleu royal */
+body.t5 { --bg:#07101f; --card:#0d1d38; --border:#163060; --primary:#4488ff; }
+
+/* ══════════════════════════════
+   BASE
+══════════════════════════════ */
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  min-height: 100vh; overflow-x: hidden;
+  max-width: 430px; margin: 0 auto;
+  transition: background .3s;
+}
+button { cursor: pointer; border: none; background: none; color: inherit; font-family: inherit; }
+a      { color: inherit; text-decoration: none; }
+input[type=file] { display: none; }
+
+/* ══════════════════════════════
+   SCREENS
+══════════════════════════════ */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ══════════════════════════════
+   BOUTON THÈME ⛅ (top-right)
+══════════════════════════════ */
+.theme-btn {
+  position: absolute; top: 14px; right: 14px; z-index: 20;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; cursor: pointer;
+  transition: transform .15s, background .2s;
+}
+.theme-btn:active { transform: scale(.88); }
+
+/* ══════════════════════════════
+   LOCK SCREEN
+══════════════════════════════ */
+#lock {
+  align-items: center; justify-content: center;
+  padding: 20px 32px 28px; position: relative;
+  background: linear-gradient(160deg, var(--bg) 0%, #0f1525 50%, var(--bg) 100%);
+}
+
+/* Logo */
+.lock-logo {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+  margin-top: 40px; margin-bottom: 24px;
+}
+.lock-ring {
+  width: 84px; height: 84px; border-radius: 50%;
+  border: 2px solid var(--primary);
+  background: rgba(0,212,255,.07);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,212,255,.3); }
+  50%      { box-shadow: 0 0 0 14px rgba(0,212,255,0); }
+}
+.lock-name {
+  font-size: 30px; font-weight: 900; letter-spacing: 4px;
+  text-align: center; line-height: 1.1;
+}
+.lock-name span {
+  display: block; font-size: 16px; font-weight: 700;
+  letter-spacing: 8px; color: var(--primary); margin-top: 2px;
+}
+.lock-tag { font-size: 13px; color: var(--muted); letter-spacing: 1px; }
+
+/* PIN area */
+.lock-lbl { font-size: 15px; color: var(--muted); margin-bottom: 16px; font-weight: 500; }
+.dots { display: flex; gap: 14px; margin-bottom: 4px; }
+.dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--border); background: transparent;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.dot.on { background: var(--primary); border-color: var(--primary); transform: scale(1.1); }
+.err { height: 20px; font-size: 13px; color: var(--red); margin-bottom: 6px; text-align: center; }
+
+/* Keypad */
+.keypad { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
+.krow   { display: flex; gap: 14px; justify-content: center; }
+.key {
+  width: 78px; height: 78px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border);
+  font-size: 24px; font-weight: 400;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .1s, border-color .1s, transform .08s;
+  user-select: none;
+}
+.key:active { background: rgba(255,255,255,.1); border-color: var(--primary); transform: scale(.93); }
+.key.del    { font-size: 20px; color: var(--muted); }
+.key.qmark  { font-size: 22px; color: var(--muted); }
+
+.by { font-size: 11px; color: #2a3a5a; letter-spacing: 2px; margin-top: 18px; }
+
+@keyframes shake {
+  0%,100% { transform:translateX(0);  }
+  20%     { transform:translateX(-10px); }
+  40%     { transform:translateX(10px);  }
+  60%     { transform:translateX(-8px);  }
+  80%     { transform:translateX(8px);   }
+}
+.shake { animation: shake .3s ease; }
+
+/* ══════════════════════════════
+   APP SHELL
+══════════════════════════════ */
+#app { background: var(--bg); padding-bottom: 72px; position: relative; }
+
+/* Topbar centré */
+.topbar {
+  display: flex; align-items: center;
+  padding: 52px 14px 12px; gap: 8px;
+}
+.topbar-center { flex: 1; text-align: center; }
+.topbar-title {
+  font-size: 20px; font-weight: 900; letter-spacing: 3px; line-height: 1.1;
+}
+.topbar-title span {
+  display: block; font-size: 11px; font-weight: 700;
+  letter-spacing: 6px; color: var(--primary); margin-top: 2px;
+}
+.topbar-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+  transition: background .15s;
+}
+.icon-btn:active { background: rgba(255,255,255,.1); }
+
+/* ══════════════════════════════
+   BOTTOM NAV
+══════════════════════════════ */
+.bnav {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 430px;
+  background: rgba(10,13,26,.96); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; z-index: 100;
+}
+.ntab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 0 16px; gap: 4px;
+  color: var(--muted); font-size: 11px; font-weight: 500;
+  transition: color .2s; cursor: pointer;
+}
+.ntab.on { color: var(--primary); }
+.ntab svg { width: 22px; height: 22px; }
+
+/* ══════════════════════════════
+   TAB PANELS
+══════════════════════════════ */
+.panel { display: none; }
+.panel.on { display: block; }
+
+/* ══════════════════════════════
+   HOME GRID
+══════════════════════════════ */
+.grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; padding: 0 16px 16px;
+}
+.ccard {
+  border-radius: 18px; border: 1px solid var(--border);
+  overflow: hidden; cursor: pointer;
+  transition: transform .12s, opacity .12s;
+}
+.ccard:active { transform: scale(.96); opacity: .85; }
+.cinner {
+  padding: 20px; min-height: 160px;
+  display: flex; flex-direction: column; gap: 8px; justify-content: space-between;
+}
+.cico {
+  width: 56px; height: 56px; border-radius: 28px; border: 1px solid transparent;
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+}
+.cname  { font-size: 16px; font-weight: 700; }
+.ccnt   { font-size: 12px; color: var(--muted); }
+.carrow {
+  align-self: flex-end; width: 28px; height: 28px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.scard {
+  margin: 0 16px 16px; border-radius: 12px;
+  border: 1px solid rgba(0,212,255,.15);
+  background: rgba(0,212,255,.06);
+  padding: 14px 16px; display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--muted);
+}
+
+/* ══════════════════════════════
+   SETTINGS TAB
+══════════════════════════════ */
+.sscroll { padding: 0 20px 100px; }
+.shdr { padding: 52px 0 8px; font-size: 28px; font-weight: 800; }
+.pcard {
+  border-radius: 20px; border: 1px solid var(--border);
+  background: linear-gradient(135deg,#141829,#0f1525);
+  padding: 24px; display: flex; flex-direction: column;
+  align-items: center; gap: 8px; margin-bottom: 24px;
+}
+.pring {
+  width: 88px; height: 88px; border-radius: 50%;
+  border: 2px solid var(--primary);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+}
+.pico {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(0,212,255,.1);
+  display: flex; align-items: center; justify-content: center; font-size: 32px;
+}
+.pname  { font-size: 26px; font-weight: 800; letter-spacing: 3px; }
+.pnps   { display: inline-block; }
+.psub   { font-size: 13px; color: var(--muted); }
+.pbrow  { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; justify-content: center; }
+.badge  { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.bg     { background:rgba(251,191,36,.1); border:1px solid rgba(251,191,36,.3); color:#fbbf24; }
+.bc     { background:rgba(0,212,255,.1);  border:1px solid rgba(0,212,255,.3);  color:var(--primary); }
+
+.slbl { font-size:11px; color:var(--muted); font-weight:600; letter-spacing:2px; margin-bottom:10px; margin-left:4px; }
+.clist { border-radius:16px; border:1px solid var(--border); background:var(--card); overflow:hidden; margin-bottom:24px; }
+.crow {
+  display:flex; align-items:center; gap:12px; padding:14px 16px;
+  border-bottom:1px solid var(--border); cursor:pointer;
+  transition:background .1s; text-decoration:none; color:inherit;
+}
+.crow:last-child { border-bottom:none; }
+.crow:active { background:rgba(255,255,255,.06); }
+.cico2 { width:40px; height:40px; border-radius:20px; border:1px solid transparent; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.clbl  { font-size:14px; font-weight:500; }
+.cval  { font-size:12px; color:var(--muted); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.carr  { margin-left:auto; font-size:14px; color:#2a3a5a; flex-shrink:0; }
+.ainfo { text-align:center; color:#2a3a5a; font-size:11px; display:flex; flex-direction:column; gap:4px; margin-top:8px; }
+
+/* ══════════════════════════════
+   CATEGORY SCREEN
+══════════════════════════════ */
+#category { background: var(--bg); }
+.ctopbar  { display:flex; align-items:center; padding:52px 16px 12px; gap:10px; }
+.back     {
+  width:40px; height:40px; border-radius:20px;
+  background:rgba(255,255,255,.06); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; flex-shrink:0;
+}
+.back:active { background:rgba(255,255,255,.12); }
+.ctmid  { flex:1; display:flex; align-items:center; gap:10px; }
+.chico  { width:36px; height:36px; border-radius:18px; border:1px solid transparent; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.chtitle{ font-size:20px; font-weight:700; }
+.addbtn {
+  width:42px; height:42px; border-radius:21px; border:1.5px solid transparent;
+  display:flex; align-items:center; justify-content:center; font-size:22px;
+  cursor:pointer; flex-shrink:0; transition:opacity .15s, transform .1s;
+}
+.addbtn:active { opacity:.7; transform:scale(.93); }
+
+.flist { padding:8px 16px 90px; display:flex; flex-direction:column; gap:10px; min-height:60vh; }
+.frow {
+  display:flex; align-items:center; gap:12px;
+  background:var(--card); border-radius:14px; border:1px solid var(--border);
+  padding:14px 16px; cursor:pointer;
+  transition:background .1s; user-select:none;
+}
+.frow:active { background:rgba(255,255,255,.07); }
+.frow.lp { background:rgba(255,255,255,.08); border-color:var(--primary); }
+.fico  { width:44px; height:44px; border-radius:22px; border:1px solid transparent; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.finfo { flex:1; overflow:hidden; }
+.fname { font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fdate { font-size:11px; color:var(--muted); margin-top:2px; }
+.fplay {
+  width:32px; height:32px; border-radius:50%;
+  background:rgba(255,255,255,.06); border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; flex-shrink:0; transition:background .15s;
+}
+.fplay:active { background:rgba(255,255,255,.15); }
+
+.empty { display:flex; flex-direction:column; align-items:center; padding-top:60px; gap:12px; }
+.eico  { width:96px; height:96px; border-radius:48px; border:2px solid transparent; display:flex; align-items:center; justify-content:center; font-size:42px; margin-bottom:8px; }
+.etitle{ font-size:18px; font-weight:600; }
+.ehint { font-size:13px; color:var(--muted); text-align:center; padding:0 20px; }
+.eadd  { display:flex; align-items:center; gap:8px; padding:12px 20px; border-radius:24px; border:1.5px solid transparent; font-size:14px; font-weight:600; cursor:pointer; margin-top:8px; transition:opacity .15s; }
+.eadd:active { opacity:.7; }
+.cbar  { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:rgba(10,13,26,.92); border-top:1px solid var(--border); padding:10px; text-align:center; font-size:12px; color:var(--muted); z-index:50; }
+
+/* ══════════════════════════════
+   BOTTOM SHEET
+══════════════════════════════ */
+.shovl {
+  position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:200;
+  display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .25s;
+}
+.shovl.on { opacity:1; pointer-events:all; }
+.sheet {
+  background:var(--card); border-radius:24px 24px 0 0; border:1px solid var(--border);
+  width:100%; max-width:430px; padding:12px 0 36px;
+  transform:translateY(100%); transition:transform .3s cubic-bezier(.32,1.2,.5,1);
+}
+.shovl.on .sheet { transform:translateY(0); }
+.shandle { width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 14px; }
+.sfname  { font-size:13px; color:var(--muted); text-align:center; padding:0 24px 14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sbtn    { display:flex; align-items:center; gap:14px; padding:16px 24px; font-size:16px; font-weight:500; cursor:pointer; transition:background .1s; width:100%; }
+.sbtn:active { background:rgba(255,255,255,.06); }
+.sbtn .si { font-size:22px; width:32px; text-align:center; }
+.sbtn.red { color:var(--red); }
+.scancel  { margin:10px 16px 0; padding:14px; border-radius:14px; background:rgba(255,255,255,.06); border:1px solid var(--border); font-size:15px; font-weight:600; cursor:pointer; width:calc(100% - 32px); text-align:center; transition:background .15s; }
+.scancel:active { background:rgba(255,255,255,.12); }
+
+/* ══════════════════════════════
+   MEDIA VIEWER
+══════════════════════════════ */
+.vovl {
+  position:fixed; inset:0; background:rgba(0,0,0,.94); z-index:300;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:16px; opacity:0; pointer-events:none; transition:opacity .25s;
+}
+.vovl.on { opacity:1; pointer-events:all; }
+.vcls {
+  position:absolute; top:16px; right:16px; width:40px; height:40px;
+  border-radius:50%; background:rgba(255,255,255,.12);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; z-index:10;
+}
+.vcls:active { background:rgba(255,255,255,.25); }
+.vtitle {
+  position:absolute; top:22px; left:56px; right:56px;
+  font-size:13px; color:var(--muted); text-align:center;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+#vimg   { max-width:100%; max-height:80vh; border-radius:12px; object-fit:contain; display:none; }
+#vvid   { max-width:100%; max-height:80vh; border-radius:12px; display:none; outline:none; }
+#vaud   { width:100%; max-width:360px; display:none; accent-color:var(--primary); }
+.vapkbox{ display:none; flex-direction:column; align-items:center; gap:16px; text-align:center; }
+.vapkico{ font-size:64px; }
+.vapknm { font-size:16px; font-weight:600; }
+.vapkh  { font-size:13px; color:var(--muted); }
+.vapkdl { padding:12px 28px; border-radius:24px; background:var(--primary); color:#000; font-size:15px; font-weight:700; cursor:pointer; transition:opacity .15s; }
+.vapkdl:active { opacity:.8; }
+
+/* ══════════════════════════════
+   RECOVER MODAL
+══════════════════════════════ */
+.movl {
+  position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:400;
+  display:flex; align-items:center; justify-content:center; padding:24px;
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.movl.on { opacity:1; pointer-events:all; }
+.modal {
+  background:var(--card); border-radius:20px; border:1px solid var(--border);
+  padding:28px 22px; width:100%; max-width:370px;
+  transform:scale(.92); transition:transform .25s cubic-bezier(.32,1.2,.5,1);
+}
+.movl.on .modal { transform:scale(1); }
+.mico  { font-size:36px; text-align:center; margin-bottom:14px; }
+.mtitle{ font-size:19px; font-weight:700; text-align:center; margin-bottom:10px; }
+.mtext { font-size:14px; color:var(--muted); line-height:1.55; margin-bottom:18px; text-align:center; }
+.mwabtn{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  padding:15px; border-radius:14px;
+  background:rgba(37,211,102,.14); border:1px solid rgba(37,211,102,.45);
+  color:#25d366; font-size:15px; font-weight:700;
+  cursor:pointer; text-decoration:none; margin-bottom:18px;
+  transition:opacity .15s;
+}
+.mwabtn:active { opacity:.8; }
+.msep  { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.msep span { font-size:12px; color:#3a4a6a; white-space:nowrap; }
+.msep::before,.msep::after { content:''; flex:1; height:1px; background:var(--border); }
+/* font-size 16px sur l'input = pas de zoom iOS/Android */
+.minput {
+  width:100%; background:rgba(255,255,255,.06); border:1px solid var(--border);
+  border-radius:12px; padding:12px 14px; color:var(--text);
+  font-size:16px; font-family:inherit; margin-bottom:12px;
+  outline:none; transition:border-color .15s;
+}
+.minput:focus { border-color:var(--primary); }
+.minput::placeholder { color:#3a4a6a; }
+.mok {
+  padding:14px; border-radius:12px; background:var(--primary); color:#000;
+  font-size:15px; font-weight:700; cursor:pointer; text-align:center;
+  transition:opacity .15s; margin-bottom:10px;
+}
+.mok:active { opacity:.8; }
+.mcancel{
+  padding:12px; border-radius:12px; border:1px solid var(--border);
+  font-size:14px; color:var(--muted); cursor:pointer; text-align:center;
+  transition:background .15s;
+}
+.mcancel:active { background:rgba(255,255,255,.06); }
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOCK SCREEN ══════════════ -->
+<div class="screen active" id="lock">
+  <button class="theme-btn" id="tbtn-lock">⛅</button>
+
+  <div class="lock-logo">
+    <div class="lock-ring">🔒</div>
+    <div class="lock-name">VIE PRIVÉ<span>NPS</span></div>
+    <div class="lock-tag">Coffre-fort sécurisé</div>
+  </div>
+
+  <div class="lock-lbl" id="llbl">Créer votre PIN</div>
+  <div class="dots" id="dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div>
+  </div>
+  <div class="err" id="lerr"></div>
+
+  <div class="keypad">
+    <div class="krow">
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+    </div>
+    <div class="krow">
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+    </div>
+    <div class="krow">
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+    </div>
+    <div class="krow">
+      <button class="key qmark" data-k="recover">❔</button>
+      <button class="key" data-k="0">0</button>
+      <button class="key del"   data-k="del">⌫</button>
+    </div>
+  </div>
+
+  <div class="by">by NPS NELSON</div>
+</div>
+
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div class="screen" id="app">
+
+  <!-- HOME -->
+  <div class="panel on" id="tab-home">
+    <div class="topbar">
+      <button class="icon-btn" id="tbtn-app">⛅</button>
+      <div class="topbar-center">
+        <div class="topbar-title">VIE PRIVÉ<span>NPS</span></div>
+        <div class="topbar-sub" id="home-count">0 fichiers protégés</div>
+      </div>
+      <button class="icon-btn" id="home-lock">🔒</button>
+    </div>
+    <div class="grid" id="cat-grid"></div>
+    <div class="scard">🛡️ <span>Vault verrouillé et sécurisé</span></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="panel" id="tab-settings">
+    <div class="sscroll">
+      <div class="shdr">Paramètres</div>
+      <div class="pcard">
+        <div class="pring"><div class="pico">🛡️</div></div>
+        <div class="pname"><span class="pnps" id="nps-anim">NPS</span> NELSON</div>
+        <div class="psub">Créateur de VIE PRIVÉ</div>
+        <div class="pbrow">
+          <span class="badge bg">⭐ Développeur</span>
+          <span class="badge bc">🔒 VIE PRIVÉ</span>
+        </div>
+      </div>
+
+      <div class="slbl">CONTACT</div>
+      <div class="clist">
+        <a class="crow" href="mailto:nelsonpataule11@gmail.com">
+          <div class="cico2" style="background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.3)">📧</div>
+          <div style="flex:1;overflow:hidden"><div class="clbl">Email</div><div class="cval">nelsonpataule11@gmail.com</div></div>
+          <div class="carr">↗</div>
+        </a>
+        <a class="crow" href="https://tiktok.com/@nps2026" target="_blank" rel="noopener">
+          <div class="cico2" style="background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.3)">🎵</div>
+          <div style="flex:1;overflow:hidden"><div class="clbl">TikTok</div><div class="cval">@nps2026</div></div>
+          <div class="carr">↗</div>
+        </a>
+        <a class="crow" href="https://www.facebook.com/profile.php?id=61571625600712" target="_blank" rel="noopener">
+          <div class="cico2" style="background:rgba(66,103,178,.15);border-color:rgba(66,103,178,.35)">👥</div>
+          <div style="flex:1;overflow:hidden"><div class="clbl">Facebook</div><div class="cval">NPS Nelson</div></div>
+          <div class="carr">↗</div>
+        </a>
+        <a class="crow" href="https://wa.me/243981083202" target="_blank" rel="noopener">
+          <div class="cico2" style="background:rgba(37,211,102,.12);border-color:rgba(37,211,102,.3)">💬</div>
+          <div style="flex:1;overflow:hidden"><div class="clbl">WhatsApp</div><div class="cval">+243 981 083 202</div></div>
+          <div class="carr">↗</div>
+        </a>
+        <a class="crow" href="https://whatsapp.com/channel/0029Vb8AxMhEAKWFtOKdvq0s" target="_blank" rel="noopener">
+          <div class="cico2" style="background:rgba(37,211,102,.18);border-color:rgba(37,211,102,.45)">📢</div>
+          <div style="flex:1;overflow:hidden"><div class="clbl">Chaîne WhatsApp</div><div class="cval">NEW WORLD🌎</div></div>
+          <div class="carr">↗</div>
+        </a>
+      </div>
+
+      <div class="slbl">SÉCURITÉ</div>
+      <div class="clist">
+        <div class="crow" id="settings-lock">
+          <div class="cico2" style="background:rgba(255,71,87,.1);border-color:rgba(255,71,87,.3)">🔒</div>
+          <div style="flex:1"><div class="clbl">Verrouiller le Vault</div><div class="cval">Retourner à l'écran PIN</div></div>
+          <div class="carr" style="color:var(--red)">›</div>
+        </div>
+      </div>
+
+      <div class="ainfo">
+        <span>VIE PRIVÉ v1.0.0</span>
+        <span>© 2026 NPS NELSON</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="bnav">
+    <div class="ntab on" data-tab="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Vault
+    </div>
+    <div class="ntab" data-tab="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      Paramètres
+    </div>
+  </nav>
+</div>
+
+
+<!-- ══════════════ CATEGORY ══════════════ -->
+<div class="screen" id="category">
+  <div class="ctopbar">
+    <button class="back" id="cat-back">←</button>
+    <div class="ctmid">
+      <div class="chico" id="chico"></div>
+      <div class="chtitle" id="chtitle"></div>
+    </div>
+    <button class="addbtn" id="cat-add">＋</button>
+  </div>
+  <div class="flist" id="flist"></div>
+  <div class="cbar" id="cbar">0 fichiers</div>
+  <input type="file" id="finput" multiple>
+</div>
+
+
+<!-- ══════════════ BOTTOM SHEET ══════════════ -->
+<div class="shovl" id="shovl">
+  <div class="sheet">
+    <div class="shandle"></div>
+    <div class="sfname" id="sfname"></div>
+    <button class="sbtn" id="sh-open"><span class="si">▶️</span> Ouvrir / Lire</button>
+    <button class="sbtn" id="sh-remove"><span class="si">📤</span> Retirer du coffre</button>
+    <button class="sbtn red" id="sh-del"><span class="si">🗑️</span> Supprimer définitivement</button>
+    <button class="scancel" id="sh-cancel">Annuler</button>
+  </div>
+</div>
+
+
+<!-- ══════════════ MEDIA VIEWER ══════════════ -->
+<div class="vovl" id="vovl">
+  <button class="vcls" id="vcls">✕</button>
+  <div class="vtitle" id="vtitle"></div>
+  <img  id="vimg" alt="">
+  <video id="vvid" controls playsinline></video>
+  <audio id="vaud" controls></audio>
+  <div class="vapkbox" id="vapkbox">
+    <div class="vapkico">📱</div>
+    <div class="vapknm" id="vapknm"></div>
+    <div class="vapkh">Fichier APK — téléchargez pour installer</div>
+    <button class="vapkdl" id="vapkdl">⬇️ Télécharger</button>
+  </div>
+</div>
+
+
+<!-- ══════════════ RECOVER MODAL ══════════════ -->
+<div class="movl" id="movl">
+  <div class="modal">
+    <div class="mico">🔑</div>
+    <div class="mtitle">Mot de passe oublié ?</div>
+    <div class="mtext">
+      Rejoins la chaîne WhatsApp <strong>NEW WORLD 🌎</strong><br>
+      pour obtenir ton mot de passe de récupération.
+    </div>
+    <a class="mwabtn" href="https://whatsapp.com/channel/0029Vb8AxMhEAKWFtOKdvq0s" target="_blank" rel="noopener">
+      📢 Rejoindre NEW WORLD 🌎
+    </a>
+    <div class="msep"><span>puis entre ton mot de passe de récupération</span></div>
+    <input class="minput" type="password" id="rinput" placeholder="Mot de passe de récupération…" autocomplete="off">
+    <button class="mok" id="rok">✅ Valider et réinitialiser le PIN</button>
+    <button class="mcancel" id="rcancel">Annuler</button>
+  </div>
+</div>
+
+
+<script>
+/* ══════════════════════════════════════════
+   VIE PRIVÉ — by NPS NELSON  v3
+══════════════════════════════════════════ */
+
+const WA      = 'https://whatsapp.com/channel/0029Vb8AxMhEAKWFtOKdvq0s';
+const REC_PWD = 'nps2026';
+
+const CATS = [
+  { key:'videos', label:'Vidéos',      emoji:'🎬', color:'#ff6b6b', bg:'rgba(255,107,107,', accept:'video/*' },
+  { key:'music',  label:'Musique',     emoji:'🎵', color:'#a78bfa', bg:'rgba(167,139,250,', accept:'audio/*' },
+  { key:'photos', label:'Photos',      emoji:'📷', color:'#34d399', bg:'rgba(52,211,153,',  accept:'image/*' },
+  { key:'apk',    label:'Applications',emoji:'📱', color:'#fbbf24', bg:'rgba(251,191,36,',  accept:'*/*'     },
+];
+
+/* ── localStorage helpers ── */
+function loadMeta()  { return JSON.parse(localStorage.getItem('vp_meta') || '{"videos":[],"music":[],"photos":[],"apk":[]}'); }
+function saveMeta(v) { localStorage.setItem('vp_meta', JSON.stringify(v)); }
+function loadPIN()   { return localStorage.getItem('vp_pin') || ''; }
+function savePIN(p)  { localStorage.setItem('vp_pin', p); }
+
+/* File data stored in IndexedDB */
+let db = null;
+function openDB() {
+  return new Promise((res, rej) => {
+    if (db) return res(db);
+    const r = indexedDB.open('vieprive', 1);
+    r.onupgradeneeded = e => e.target.result.createObjectStore('files');
+    r.onsuccess = e => { db = e.target.result; res(db); };
+    r.onerror   = e => rej(e);
+  });
+}
+function saveFileData(id, dataURL) {
+  return openDB().then(d => new Promise((res, rej) => {
+    const tx = d.transaction('files', 'readwrite');
+    tx.objectStore('files').put(dataURL, id);
+    tx.oncomplete = res; tx.onerror = rej;
+  }));
+}
+function loadFileData(id) {
+  return openDB().then(d => new Promise((res, rej) => {
+    const tx = d.transaction('files', 'readonly');
+    const req = tx.objectStore('files').get(id);
+    req.onsuccess = () => res(req.result || null);
+    req.onerror = rej;
+  }));
+}
+function deleteFileData(id) {
+  return openDB().then(d => new Promise((res, rej) => {
+    const tx = d.transaction('files', 'readwrite');
+    tx.objectStore('files').delete(id);
+    tx.oncomplete = res; tx.onerror = rej;
+  }));
+}
+
+/* ── State ── */
+let meta       = loadMeta();
+let currentCat = null;
+let pinMode    = loadPIN() ? 'unlock' : 'setup';
+let pinBuf     = '';
+let firstPin   = '';
+let sheetItem  = null;
+let activeBlob = null;
+
+/* ── Screens ── */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ══════════════════════════════
+   THEMES
+══════════════════════════════ */
+const THEMES = ['', 't1', 't2', 't3', 't4', 't5'];
+let theme = parseInt(localStorage.getItem('vp_theme') || '0');
+
+function applyTheme(i) {
+  theme = i;
+  localStorage.setItem('vp_theme', i);
+  document.body.className = THEMES[i];
+}
+function nextTheme() { applyTheme((theme + 1) % THEMES.length); }
+
+document.getElementById('tbtn-lock').addEventListener('click', nextTheme);
+document.getElementById('tbtn-app').addEventListener('click',  nextTheme);
+applyTheme(theme);
+
+/* ══════════════════════════════
+   LOCK / PIN
+══════════════════════════════ */
+const llbl   = document.getElementById('llbl');
+const lerr   = document.getElementById('lerr');
+const dotsEl = document.querySelectorAll('.dot');
+const dotsWr = document.getElementById('dots');
+
+function setMode(mode) {
+  pinMode = mode; pinBuf = '';
+  lerr.textContent = ''; lerr.style.color = '';
+  updDots();
+  llbl.textContent =
+    mode === 'setup'   ? 'Créer votre PIN'  :
+    mode === 'confirm' ? 'Confirmer le PIN' : 'Entrer le PIN';
+}
+function updDots() { dotsEl.forEach((d, i) => d.classList.toggle('on', i < pinBuf.length)); }
+function shake()   { dotsWr.classList.add('shake'); setTimeout(() => dotsWr.classList.remove('shake'), 350); }
+
+document.querySelectorAll('.key').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const k = btn.dataset.k;
+    if (k === 'recover') { openRecover(); return; }
+    if (k === 'del')     { if (pinBuf.length) { pinBuf = pinBuf.slice(0,-1); updDots(); lerr.textContent = ''; } return; }
+    if (!k || pinBuf.length >= 4) return;
+    pinBuf += k; updDots();
+    if (pinBuf.length === 4) setTimeout(processPin, 120);
+  });
+});
+
+function processPin() {
+  if (pinMode === 'setup') {
+    firstPin = pinBuf; setMode('confirm');
+  } else if (pinMode === 'confirm') {
+    if (pinBuf === firstPin) { savePIN(pinBuf); enterApp(); }
+    else { shake(); lerr.textContent = 'Les PINs ne correspondent pas'; setMode('setup'); }
+  } else {
+    if (pinBuf === loadPIN()) { enterApp(); }
+    else { shake(); lerr.textContent = 'PIN incorrect'; pinBuf = ''; updDots(); }
+  }
+}
+
+function enterApp() { pinBuf = ''; pinMode = 'unlocked'; renderGrid(); show('app'); }
+
+function lockVault() { setMode(loadPIN() ? 'unlock' : 'setup'); show('lock'); }
+document.getElementById('home-lock').addEventListener('click', lockVault);
+document.getElementById('settings-lock').addEventListener('click', lockVault);
+
+/* ══════════════════════════════
+   RECOVER MODAL
+══════════════════════════════ */
+const movl = document.getElementById('movl');
+
+function openRecover() { document.getElementById('rinput').value = ''; movl.classList.add('on'); }
+
+document.getElementById('rok').addEventListener('click', () => {
+  const v = document.getElementById('rinput').value.trim();
+  if (v === REC_PWD) {
+    movl.classList.remove('on');
+    localStorage.removeItem('vp_pin');
+    setMode('setup');
+    lerr.style.color = '#34d399';
+    lerr.textContent = '✅ PIN supprimé — créez un nouveau PIN';
+    setTimeout(() => { lerr.textContent = ''; lerr.style.color = ''; }, 3000);
+  } else {
+    const inp = document.getElementById('rinput');
+    inp.style.borderColor = 'var(--red)';
+    inp.value = '';
+    inp.placeholder = '❌ Mot de passe incorrect…';
+    setTimeout(() => { inp.style.borderColor = ''; inp.placeholder = 'Mot de passe de récupération…'; }, 1800);
+  }
+});
+document.getElementById('rcancel').addEventListener('click', () => movl.classList.remove('on'));
+movl.addEventListener('click', e => { if (e.target === movl) movl.classList.remove('on'); });
+
+/* ══════════════════════════════
+   HOME GRID
+══════════════════════════════ */
+function renderGrid() {
+  meta = loadMeta();
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = '';
+  let total = 0;
+  CATS.forEach(cat => {
+    const items = meta[cat.key] || [];
+    total += items.length;
+    const card = document.createElement('div');
+    card.className = 'ccard';
+    card.innerHTML = `
+      <div class="cinner" style="background:linear-gradient(135deg,${cat.bg}.15) 0%,${cat.bg}.04) 100%)">
+        <div class="cico" style="background:${cat.bg}.13);border-color:${cat.bg}.3)">${cat.emoji}</div>
+        <div class="cname">${cat.label}</div>
+        <div class="ccnt">${items.length} fichier${items.length !== 1 ? 's' : ''}</div>
+        <div class="carrow" style="background:${cat.bg}.15);color:${cat.color}">›</div>
+      </div>`;
+    card.addEventListener('click', () => openCat(cat));
+    grid.appendChild(card);
+  });
+  document.getElementById('home-count').textContent =
+    `${total} fichier${total !== 1 ? 's' : ''} protégé${total !== 1 ? 's' : ''}`;
+}
+
+/* ══════════════════════════════
+   CATEGORY SCREEN
+══════════════════════════════ */
+function openCat(cat) {
+  currentCat = cat;
+  const ic = document.getElementById('chico');
+  ic.textContent = cat.emoji;
+  ic.style.cssText = `background:${cat.bg}.13);border-color:${cat.bg}.3);width:36px;height:36px;border-radius:18px;border:1px solid;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0`;
+  document.getElementById('chtitle').textContent = cat.label;
+  document.getElementById('cat-add').style.cssText = `background:${cat.bg}.13);border-color:${cat.bg}.4);color:${cat.color}`;
+  document.getElementById('finput').setAttribute('accept', cat.accept);
+  renderFiles();
+  show('category');
+}
+
+function renderFiles() {
+  meta = loadMeta();
+  const items = meta[currentCat.key] || [];
+  const list  = document.getElementById('flist');
+  const bar   = document.getElementById('cbar');
+  const cat   = currentCat;
+  bar.textContent = `${items.length} fichier${items.length !== 1 ? 's' : ''} dans le vault`;
+
+  if (!items.length) {
+    list.innerHTML = `
+      <div class="empty">
+        <div class="eico" style="border-color:${cat.bg}.3);background:${cat.bg}.08)">${cat.emoji}</div>
+        <div class="etitle">Aucun fichier caché</div>
+        <div class="ehint">Appuie sur ＋ pour ajouter des fichiers</div>
+        <button class="eadd" id="eadd" style="border-color:${cat.color};background:${cat.bg}.13);color:${cat.color}">
+          ＋ Ajouter un fichier
+        </button>
+      </div>`;
+    document.getElementById('eadd').addEventListener('click', pickFile);
+    return;
+  }
+
+  list.innerHTML = '';
+  items.slice().reverse().forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'frow';
+    const d = new Date(item.at);
+    const ds = d.toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' });
+    row.innerHTML = `
+      <div class="fico" style="background:${cat.bg}.12);border-color:${cat.bg}.3)">${cat.emoji}</div>
+      <div class="finfo">
+        <div class="fname">${esc(item.name)}</div>
+        <div class="fdate">${ds}</div>
+      </div>
+      <button class="fplay" title="Ouvrir">▶</button>`;
+
+    row.querySelector('.fplay').addEventListener('click', e => {
+      e.stopPropagation(); openViewer(item);
+    });
+
+    /* Long press → bottom sheet */
+    let pt = null, lp = false;
+    const sp = () => { lp=false; pt=setTimeout(()=>{ lp=true; row.classList.add('lp'); openSheet(item); setTimeout(()=>row.classList.remove('lp'),400); },550); };
+    const cp = () => clearTimeout(pt);
+    row.addEventListener('touchstart', sp, { passive:true });
+    row.addEventListener('touchend',   cp);
+    row.addEventListener('touchcancel',cp);
+    row.addEventListener('mousedown',  sp);
+    row.addEventListener('mouseup',    cp);
+    row.addEventListener('mouseleave', cp);
+    row.addEventListener('click', () => { if (!lp) openViewer(item); });
+
+    list.appendChild(row);
+  });
+}
+
+/* ══════════════════════════════
+   MEDIA VIEWER
+   Utilise URL.createObjectURL sur le dataURL stocké
+══════════════════════════════ */
+const vovl    = document.getElementById('vovl');
+const vimg    = document.getElementById('vimg');
+const vvid    = document.getElementById('vvid');
+const vaud    = document.getElementById('vaud');
+const vapkbox = document.getElementById('vapkbox');
+
+function openViewer(item) {
+  /* Reset */
+  vimg.style.display = vvid.style.display = vaud.style.display = 'none';
+  vapkbox.style.display = 'none';
+  vvid.pause(); vaud.pause();
+  if (activeBlob) { URL.revokeObjectURL(activeBlob); activeBlob = null; }
+
+  document.getElementById('vtitle').textContent = item.name;
+
+  loadFileData(item.id).then(dataURL => {
+  if (!dataURL) {
+    /* Fichier manquant → proposer de supprimer l'entrée */
+    vovl.classList.add('on');
+    vapkbox.style.display = 'flex';
+    document.getElementById('vapknm').textContent = '⚠️ Fichier introuvable';
+    document.getElementById('vapkbox').querySelector('.vapkh').textContent =
+      'Ce fichier n\'existe plus. Appuyez pour le supprimer de la liste.';
+    const dlBtn = document.getElementById('vapkdl');
+    dlBtn.textContent = '🗑️ Supprimer de la liste';
+    dlBtn.onclick = () => {
+      closeViewer();
+      removeItem(currentCat.key, item.id);
+      /* Reset le bouton pour le prochain usage */
+      dlBtn.textContent = '⬇️ Télécharger';
+      document.getElementById('vapkbox').querySelector('.vapkh').textContent =
+        'Fichier APK — téléchargez pour installer';
+    };
+    return;
+  }
+
+  /* Convertir dataURL → Blob → objectURL pour lecture fiable */
+  const blob = dataURLtoBlob(dataURL);
+  const url  = URL.createObjectURL(blob);
+  activeBlob = url;
+
+  const t = item.mime || '';
+  if (t.startsWith('image/')) {
+    vimg.src = url; vimg.style.display = 'block';
+  } else if (t.startsWith('video/')) {
+    vvid.src = url; vvid.style.display = 'block'; vvid.play().catch(()=>{});
+  } else if (t.startsWith('audio/')) {
+    vaud.src = url; vaud.style.display = 'block'; vaud.play().catch(()=>{});
+  } else {
+    /* APK ou inconnu */
+    document.getElementById('vapknm').textContent = item.name;
+    const dlBtn = document.getElementById('vapkdl');
+    dlBtn.textContent = '⬇️ Télécharger';
+    dlBtn.onclick = () => { const a=document.createElement('a'); a.href=url; a.download=item.name; a.click(); };
+    vapkbox.style.display = 'flex';
+  }
+
+  vovl.classList.add('on');
+  }); // fin loadFileData
+}
+
+function closeViewer() {
+  vvid.pause(); vaud.pause();
+  vovl.classList.remove('on');
+  if (activeBlob) { URL.revokeObjectURL(activeBlob); activeBlob = null; }
+}
+
+/* dataURL → Blob */
+function dataURLtoBlob(dataURL) {
+  const [header, b64] = dataURL.split(',');
+  const mime = header.match(/:(.*?);/)[1];
+  const bin  = atob(b64);
+  const arr  = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+document.getElementById('vcls').addEventListener('click', closeViewer);
+vovl.addEventListener('click', e => { if (e.target === vovl) closeViewer(); });
+
+/* ══════════════════════════════
+   BOTTOM SHEET
+══════════════════════════════ */
+const shovl = document.getElementById('shovl');
+
+function openSheet(item) { sheetItem = item; document.getElementById('sfname').textContent = item.name; shovl.classList.add('on'); }
+function closeSheet()    { shovl.classList.remove('on'); sheetItem = null; }
+
+document.getElementById('sh-cancel').addEventListener('click', closeSheet);
+shovl.addEventListener('click', e => { if (e.target === shovl) closeSheet(); });
+
+document.getElementById('sh-open').addEventListener('click', () => { const it=sheetItem; closeSheet(); if (it) openViewer(it); });
+
+document.getElementById('sh-remove').addEventListener('click', () => {
+  const it = sheetItem; closeSheet();
+  if (!it) return;
+  if (confirm(`Retirer "${it.name}" du coffre ?`)) removeItem(currentCat.key, it.id);
+});
+
+document.getElementById('sh-del').addEventListener('click', () => {
+  const it = sheetItem; closeSheet();
+  if (!it) return;
+  if (confirm(`⚠️ Supprimer définitivement "${it.name}" ?`)) removeItem(currentCat.key, it.id);
+});
+
+function removeItem(catKey, id) {
+  meta = loadMeta();
+  meta[catKey] = meta[catKey].filter(i => i.id !== id);
+  saveMeta(meta);
+  deleteFileData(id).then(() => {
+    renderFiles();
+    renderGrid();
+  });
+}
+
+/* ══════════════════════════════
+   FILE PICK & STORE (dataURL)
+══════════════════════════════ */
+function pickFile() { document.getElementById('finput').click(); }
+document.getElementById('cat-add').addEventListener('click', pickFile);
+
+document.getElementById('finput').addEventListener('change', function () {
+  const files = Array.from(this.files || []);
+  if (!files.length) return;
+  meta = loadMeta();
+
+  let i = 0;
+  function next() {
+    if (i >= files.length) { saveMeta(meta); this.value = ''; renderFiles(); renderGrid(); return; }
+    const file = files[i++];
+    const reader = new FileReader();
+    reader.onload = e => {
+      const id = Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+      saveFileData(id, e.target.result).then(() => {
+        meta[currentCat.key].push({
+          id, name: file.name, size: file.size,
+          mime: file.type, at: new Date().toISOString(),
+        });
+        next.call(this);
+      }).catch(() => {
+        alert('❌ Fichier trop lourd ou erreur de stockage.');
+        next.call(this);
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+  next.call(this);
+});
+
+document.getElementById('cat-back').addEventListener('click', () => { renderGrid(); show('app'); });
+
+/* ══════════════════════════════
+   BOTTOM NAV
+══════════════════════════════ */
+document.querySelectorAll('.ntab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const t = tab.dataset.tab;
+    document.querySelectorAll('.ntab').forEach(x => x.classList.remove('on'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('on'));
+    tab.classList.add('on');
+    document.getElementById('tab-' + t).classList.add('on');
+    if (t === 'home') renderGrid();
+  });
+});
+
+/* ══════════════════════════════
+   NPS RAINBOW
+══════════════════════════════ */
+const RB = ['#ff0000','#ff6600','#ffcc00','#00cc44','#00ccff','#0066ff','#9900cc','#ff00aa'];
+let ci = 0;
+setInterval(() => {
+  ci = (ci+1) % RB.length;
+  const el = document.getElementById('nps-anim');
+  if (el) el.style.color = RB[ci];
+}, 300);
+
+/* ══════════════════════════════
+   HELPERS
+══════════════════════════════ */
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ══════════════════════════════
+   PWA AUTO-LOCK
+   Verrouille dès que l'app passe en arrière-plan
+══════════════════════════════ */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && typeof pinMode !== 'undefined' && pinMode === 'unlocked') {
+    lockVault();
+  }
+});
+
+/* ── INIT ── */
+setMode(loadPIN() ? 'unlock' : 'setup');
+
+</script>
+</body>
+</html>
