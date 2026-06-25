@@ -962,7 +962,11 @@ function openViewer(item) {
     document.getElementById('vapknm').textContent = item.name;
     const dlBtn = document.getElementById('vapkdl');
     dlBtn.textContent = '⬇️ Télécharger';
-    dlBtn.onclick = () => { const a=document.createElement('a'); a.href=url; a.download=item.name; a.click(); };
+    dlBtn.onclick = () => {
+        if (window.AndroidVault) {
+          loadFileData(item.id).then(dUrl => { if(dUrl) window.AndroidVault.saveToDownloads(dUrl, item.name, item.mime||'application/octet-stream'); });
+        } else { const a=document.createElement('a'); a.href=url; a.download=item.name; a.click(); }
+      };
     vapkbox.style.display = 'flex';
   }
 
@@ -1005,8 +1009,26 @@ document.getElementById('sh-open').addEventListener('click', () => { const it=sh
 document.getElementById('sh-remove').addEventListener('click', () => {
   const it = sheetItem; closeSheet();
   if (!it) return;
-  if (confirm(`Retirer "${it.name}" du coffre ?`)) removeItem(currentCat.key, it.id);
-});
+  if (!confirm(`Retirer "${it.name}" du coffre ?\nLe fichier sera enregistré dans vos Téléchargements.`)) return;
+    loadFileData(it.id).then(dataURL => {
+      if (dataURL) {
+        if (window.AndroidVault) {
+          try { window.AndroidVault.saveToDownloads(dataURL, it.name, it.mime || 'application/octet-stream'); }
+          catch(e) { console.warn('AndroidVault:', e); }
+        } else {
+          try {
+            const blob = dataURLtoBlob(dataURL);
+            const bUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = bUrl; a.download = it.name;
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(bUrl); }, 1500);
+          } catch(e) { console.warn('download fallback:', e); }
+        }
+      }
+      removeItem(currentCat.key, it.id);
+    });
+  });
 
 document.getElementById('sh-del').addEventListener('click', () => {
   const it = sheetItem; closeSheet();
